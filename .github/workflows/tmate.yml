@@ -1,14 +1,14 @@
 name: Create VPS
 
 on:
-  workflow_dispatch:
-  repository_dispatch:
+  workflow_dispatch:          # ✅ Manual "Run workflow" button
+  repository_dispatch:        # ✅ Can still be triggered by API or other workflows
     types: [create-vps]
 
 jobs:
   start-vps:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 360  # 6 hours max
 
     steps:
       - name: ⬇️ Checkout
@@ -34,14 +34,14 @@ jobs:
           SSH=$(tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}')
           echo "$SSH" > "links/${{ github.event.client_payload.vps_name || 'manual-vps' }}.txt"
           echo "✅ SSH Ready: $SSH"
-          sleep 60
+          sleep 60  # give time for GitHub to sync
 
       - name: 📦 Save backup
         run: |
           name="${{ github.event.client_payload.vps_name || 'manual-vps' }}"
           zip -r ".backup/$name.zip" . -x ".git/*" ".github/*" ".backup/*" || true
 
-      - name: 📤 Push
+      - name: 📤 Push changes (with force)
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "🔁 Updated SSH + backup for ${{ github.event.client_payload.vps_name || 'manual-vps' }}"
